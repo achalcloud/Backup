@@ -1,0 +1,109 @@
+### Installing on [Amazon Linux AMI](http://aws.amazon.com/amazon-linux-ami/) (release 2014.09)
+Installing using [yum](http://yum.baseurl.org).
+By default Amazon Linux AMI release has only AWS's yum repos, but it has EPEL (Extra Packages for Enterprise Linux) predefined but not enabled. To temporarily enable the EPEL 6 repository, use the yum command line option **--enablerepo=epel**.
+
+Installing duplicity and dependencies:
+```
+sudo yum install duplicity rsync gpg python python-devel python-pip --enablerepo=epel
+```
+
+Insalling duply manually (latest version can be found [here](http://duply.net/wiki/index.php/Duply-downloads)):
+```
+cd ~
+wget http://downloads.sourceforge.net/project/ftplicity/duply%20%28simple%20duplicity%29/1.9.x/duply_1.9.1.tgz
+tar -zxvf ./duply_1.9.1.tgz
+sudo cp ./duply_1.9.1/duply /usr/bin/
+rm -r ./duply_1.9.1
+```
+
+Install [boto](https://github.com/boto/boto) for S3 support:
+```
+sudo pip install boto
+```
+
+Test duply:
+```
+duply -v
+```
+This command should output something like:
+```
+  duply version 1.9.1
+  (http://duply.net)
+
+  Using installed duplicity version 0.6.22, python 2.6.9, gpg 2.0.25 (Home: ~/.gnupg), awk 'GNU Awk 3.1.7', bash '4.1.2(1)-release (x86_64-redhat-linux-gnu)'.
+```
+
+### Configuring
+To create backup profile (ex. www) use
+```
+duply www create
+```
+
+Edit default configuration (/home/ec2-user/.duply/www/conf)
+```
+vi /home/ec2-user/.duply/www/conf
+```
+
+conf file is pretty well documented, **read it!**
+
+To use simple password protection comment line:
+```
+#GPG_KEY='_KEY_ID_'
+```
+And enter your password here:
+```
+GPG_PW='MYSUPERPASSWORD'
+```
+
+Set S3 bucket as a backup target:
+```
+TARGET='s3://s3-region.amazonaws.com/mybucket/some/sub/folder/'
+#ex.:
+TARGET='s3://s3-eu-west-1.amazonaws.com/mybackups/www/'
+```
+
+S3 Access Key ID gose here:
+```
+TARGET_USER='FEGAIKGR4OLIFF2UIP34'
+```
+
+S3 Secret Access Key gose here:
+```
+TARGET_PASS='aAezgEBvz6i34df0AHRTagNTS3wMT4w5np55eEDD'
+```
+
+Directory to backup:
+```
+SOURCE='/var/www/'
+```
+
+Set backup's max age (Used for the "purge" command.):
+```
+MAX_AGE=6M
+```
+
+Save and exit!
+
+## Run
+Run backup:
+```
+duply www backup
+```
+
+## Cron config
+```
+crontab -e
+```
+And add (newline at the end is requiered):
+```
+# Daily Backups @ 5 am
+0 5 * * * duply www backup
+
+```
+
+To be quiet:
+```
+# Daily Backups @ 5 am (quiet)
+0 5 * * * duply www backup > /dev/null 2>&1
+
+```
